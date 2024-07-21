@@ -28,8 +28,8 @@ NUMBER_OF_PLAYERS = 5
 CHALLENGE_MODE = True
 CLOSE_LURE = True
 CROSS_REBGS_THRESHOLD = 75
-TELEGRAB_REBGS_THRESHOLD = 25
-DEF_LEAVE_THRESHOLD = 30
+TELEGRAB_REBGS_THRESHOLD = 20
+DEF_LEAVE_THRESHOLD = 50
 # Choose from the tick Tekton needs to die on to stay: 16 (<24s), 20 (<26.4s), 24 (<28.8s), 28 (<31.2s), 32 (<33.6s), etc.
 # Set high to not leave any.
 CUTOFF_TICK = 28
@@ -83,6 +83,8 @@ class Tekton():
         self.defence = defence
         self.maxhit = maxhit
         self.initial_defence = defence
+        self.burn_stacks = 0
+        self.burn_cooldown = 0
 
     def get_hp(self):
         return self.hp
@@ -104,6 +106,13 @@ class Tekton():
             return random.randint(1, math.floor(self.maxhit / 2))
         else:
             return random.randint(1, self.maxhit)
+        
+    def apply_burn(self, stacks):
+        self.burn_stacks = min(self.burn_stacks + stacks, 5)
+
+    def do_burn_damage(self):
+        self.hp -= self.burn_stacks
+        self.burn_cooldown += 3
 
     def get_stats(self):
         """
@@ -117,85 +126,152 @@ class Tekton():
 ACCURACY_MAX_VALUES = {
     'ovl': {
         'torva': {
-            'ultor': {
-                'maul': {'acc': 36580, 'max': 67},
-                'bgs': {'acc': 35416, 'max': 78},
-                'scythe': {'acc': 34352, 'max': 51},
-                'claws': {'acc': 24016, 'max': 45}
+            'torture': {
+                'ultor': {
+                    'maul': {'acc': 36580, 'max': 67},
+                    'bgs': {'acc': 35416, 'max': 78},
+                    'scythe': {'acc': 34352, 'max': 51},
+                    'claws': {'acc': 24016, 'max': 45}
+                },
+                'bellator': {
+                    'maul': {'acc': 36580, 'max': 66},
+                    'bgs': {'acc': 38456, 'max': 75},
+                    'scythe': {'acc': 37392, 'max': 49},
+                    'claws': {'acc': 27056, 'max': 44}
+                },
+                'lightbearer': {
+                    'maul': {'acc': 36580, 'max': 64},
+                    'bgs': {'acc': 35416, 'max': 74},
+                    'scythe': {'acc': 34352, 'max': 48},
+                    'claws': {'acc': 24016, 'max': 42}
+                }
             },
-            'bellator': {
-                'maul': {'acc': 36580, 'max': 66},
-                'bgs': {'acc': 38456, 'max': 75},
-                'scythe': {'acc': 37392, 'max': 49},
-                'claws': {'acc': 27056, 'max': 44}
+            'rancour': {
+
             },
-            'lightbearer': {
-                'maul': {'acc': 36580, 'max': 64},
-                'bgs': {'acc': 35416, 'max': 74},
-                'scythe': {'acc': 34352, 'max': 48},
-                'claws': {'acc': 24016, 'max': 42}
+            'fury': {
+
             }
         },
         'inq': {
-            'ultor': {
-                'maul': {'acc': 42578, 'max': 66},
-                'bgs': {'acc': 33185, 'max': 77},
-                'scythe': {'acc': 25395, 'max': 50},
-                'claws': {'acc': 22800, 'max': 43}
+            'torture': {
+                'ultor': {
+                    'maul': {'acc': 42578, 'max': 66},
+                    'bgs': {'acc': 33185, 'max': 77},
+                    'scythe': {'acc': 25395, 'max': 50},
+                    'claws': {'acc': 22800, 'max': 43}
+                },
+                'bellator': {
+                    'maul': {'acc': 42578, 'max': 65},
+                    'bgs': {'acc': 33185, 'max': 74},
+                    'scythe': {'acc': 25395, 'max': 48},
+                    'claws': {'acc': 25840, 'max': 42}
+                },
+                'lightbearer': {
+                    'maul': {'acc': 42578, 'max': 63},
+                    'bgs': {'acc': 33185, 'max': 73},
+                    'scythe': {'acc': 25395, 'max': 48},
+                    'claws': {'acc': 22800, 'max': 40}
+                }
             },
-            'bellator': {
-                'maul': {'acc': 42578, 'max': 65},
-                'bgs': {'acc': 33185, 'max': 74},
-                'scythe': {'acc': 25395, 'max': 48},
-                'claws': {'acc': 25840, 'max': 42}
+            'rancour': {
+
             },
-            'lightbearer': {
-                'maul': {'acc': 42578, 'max': 63},
-                'bgs': {'acc': 33185, 'max': 73},
-                'scythe': {'acc': 25395, 'max': 48},
-                'claws': {'acc': 22800, 'max': 40}
+            'fury': {
+
             }
         }
     },
     'scb': {
         'torva': {
-            'ultor': {
-                'maul': {'acc': 35872, 'max': 66},
-                'bgs': {'acc': 34717, 'max': 77},
-                'scythe': {'acc': 33674, 'max': 50},
-                'claws': {'acc': 23542, 'max': 45}
+            'torture': {
+                'ultor': {
+                    'maul': {'acc': 35872, 'max': 66},
+                    'bgs': {'acc': 34717, 'max': 77},
+                    'scythe': {'acc': 33674, 'max': 50},
+                    'claws': {'acc': 23542, 'max': 45}
+                },
+                'bellator': {
+                    'maul': {'acc': 35872, 'max': 65},
+                    'bgs': {'acc': 37697, 'max': 75},
+                    'scythe': {'acc': 36654, 'max': 49},
+                    'claws': {'acc': 27056, 'max': 43}
+                },
+                'lightbearer': {
+                    'maul': {'acc': 35872, 'max': 64},
+                    'bgs': {'acc': 34717, 'max': 73},
+                    'scythe': {'acc': 33674, 'max': 47},
+                    'claws': {'acc': 23542, 'max': 42}
+                }
             },
-            'bellator': {
-                'maul': {'acc': 35872, 'max': 65},
-                'bgs': {'acc': 37697, 'max': 75},
-                'scythe': {'acc': 36654, 'max': 49},
-                'claws': {'acc': 27056, 'max': 43}
+            'rancour': {
+                'ultor': {
+                    'maul': {'acc': 37392, 'max': 67},
+                    'bgs': {'acc': 36207, 'max': 78},
+                    'scythe': {'acc': 35164, 'max': 51},
+                    'claws': {'acc': 25032, 'max': 45}
+                },
+                'bellator': {
+                    'maul': {'acc': 37392, 'max': 66},
+                    'bgs': {'acc': 39187, 'max': 75},
+                    'scythe': {'acc': 38144, 'max': 49},
+                    'claws': {'acc': 28012, 'max': 44}
+                },
+                'lightbearer': {
+                    'maul': {'acc': 37392, 'max': 64},
+                    'bgs': {'acc': 36207, 'max': 74},
+                    'scythe': {'acc': 35164, 'max': 48},
+                    'claws': {'acc': 25032, 'max': 42}
+                }
+
             },
-            'lightbearer': {
-                'maul': {'acc': 35872, 'max': 64},
-                'bgs': {'acc': 34717, 'max': 73},
-                'scythe': {'acc': 33674, 'max': 47},
-                'claws': {'acc': 23542, 'max': 42}
+            'fury': {
+
             }
         },
         'inq': {
-            'ultor': {
-                'maul': {'acc': 41754, 'max': 66},
-                'bgs': {'acc': 32530, 'max': 75},
-                'scythe': {'acc': 24894, 'max': 49},
-                'claws': {'acc': 22350, 'max': 43}
+            'torture': {
+                'ultor': {
+                    'maul': {'acc': 41754, 'max': 66},
+                    'bgs': {'acc': 32530, 'max': 75},
+                    'scythe': {'acc': 24894, 'max': 49},
+                    'claws': {'acc': 22350, 'max': 43}
+                },
+                'bellator': {
+                    'maul': {'acc': 41754, 'max': 64},
+                    'bgs': {'acc': 32530, 'max': 74},
+                    'scythe': {'acc': 24894, 'max': 48},
+                    'claws': {'acc': 25840, 'max': 41}
+                },
+                'lightbearer': {
+                    'maul': {'acc': 41754, 'max': 63},
+                    'bgs': {'acc': 32530, 'max': 72},
+                    'scythe': {'acc': 24894, 'max': 46},
+                    'claws': {'acc': 22350, 'max': 40}
+                }
             },
-            'bellator': {
-                'maul': {'acc': 41754, 'max': 64},
-                'bgs': {'acc': 32530, 'max': 74},
-                'scythe': {'acc': 24894, 'max': 48},
-                'claws': {'acc': 25840, 'max': 41}
+            'rancour': {
+                'ultor': {
+                    'maul': {'acc': 43312, 'max': 66},
+                    'bgs': {'acc': 34057, 'max': 77},
+                    'scythe': {'acc': 26421, 'max': 50},
+                    'claws': {'acc': 23840, 'max': 43}
+                },
+                'bellator': {
+                    'maul': {'acc': 43312, 'max': 65},
+                    'bgs': {'acc': 34057, 'max': 74},
+                    'scythe': {'acc': 26421, 'max': 48},
+                    'claws': {'acc': 26820, 'max': 42}
+                },
+                'lightbearer': {
+                    'maul': {'acc': 43312, 'max': 63},
+                    'bgs': {'acc': 34057, 'max': 73},
+                    'scythe': {'acc': 26421, 'max': 47},
+                    'claws': {'acc': 23840, 'max': 40}
+                }
             },
-            'lightbearer': {
-                'maul': {'acc': 41754, 'max': 63},
-                'bgs': {'acc': 32530, 'max': 72},
-                'scythe': {'acc': 24894, 'max': 46},
-                'claws': {'acc': 22350, 'max': 40}
+            'fury': {
+
             }
         }
     }
@@ -291,6 +367,23 @@ def do_claw(tekton, maxAttRoll, maxHit):
         else:
             return
 
+# NOT DONE        
+def do_bone_claw(tekton, maxAttRoll, maxHit):
+    accuracy = sim_acc(tekton, Style.SLASH, maxAttRoll)
+    burn_chance = 0
+    hits = 0
+    for x in range(0, 3):
+        accuracy_rand = random.uniform(0, 1)
+        if x > 0:
+            hit = math.floor(random.randint(0, maxHit) / 2)
+        else:
+            hit = random.randint(0, maxHit)
+        if hit == 0: hit = 1 # REBALANCE UPDATE
+        if accuracy >= accuracy_rand:
+            burn_chance += 0.15
+            hits += hit
+    tekton.hp -= hits
+
 # Helper function for the claw attack function.
 def rnd(n, m = 0):
     return random.randint(m, n)
@@ -310,13 +403,14 @@ def sim_thrall(tekton, tier):
 
 # Class to create a Raider instance.
 class Raider:
-    def __init__(self, pid, name, hp, armour, specwep, claws, ring, boost, energy, thrall, delay, thrallTier=3, vengeAmount=0, meleePray=False, re_bgs_threshold=0, start_with_scythe=False):
+    def __init__(self, pid, name, hp, armour, specwep, claws, amulet, ring, boost, energy, thrall, delay, thrallTier=3, vengeAmount=0, meleePray=False, re_bgs_threshold=0, start_with_scythe=False):
         self.pid = pid
         self.name = name
         self.hp = hp
         self.armour = armour
         self.specwep = specwep
         self.claws = claws
+        self.amulet = amulet
         self.ring = ring
         self.boost = boost
         self.energy = energy
@@ -328,7 +422,7 @@ class Raider:
         self.re_bgs_threshold = re_bgs_threshold
         self.start_with_scythe = start_with_scythe
         self.cooldown = 0
-        self.thrallCooldown = 0
+        self.thrallCooldown = 1 # Not 0, because it never spawns adjecent to the boss
         self.acc = None
         self.max = None
         self.hasSpecced = False
@@ -341,7 +435,7 @@ class Raider:
     # Sets the Raider's accuracy and max hit, based on their respective boost, armour, ring and weapon
     def set_acc_and_max(self, spec=False, force_scythe=False):
         try:
-            acc_max_values = ACCURACY_MAX_VALUES[self.boost][self.armour][self.ring]
+            acc_max_values = ACCURACY_MAX_VALUES[self.boost][self.armour][self.amulet][self.ring]
 
             # Update acc and max based on initial specwep
             if spec:
@@ -484,12 +578,13 @@ def createTeam():
                 return [Raider(pid=random.randint(0,2000), name='Cross', hp=121, armour='torva', specwep='bgs', claws=False, ring='ultor', boost='ovl', energy=100, thrall=True, delay=1),
                         Raider(pid=random.randint(0,2000), name='Chin', hp=121, armour='torva', specwep='maul', claws=False, ring='ultor', boost='ovl', energy=100, thrall=True, delay=0),
                         Raider(pid=random.randint(0,2000), name='Telegrab', hp=121, armour='torva', specwep='maul', claws=False, ring='ultor', boost='ovl', energy=100, thrall=False, delay=0)]
+            # Rancour
             case 5:
-                return [Raider(pid=random.randint(0,2000), name='Cross', hp=121, armour='torva', specwep='bgs', claws=True, ring='ultor', boost='scb', energy=100, thrall=False, delay=1, vengeAmount=1, re_bgs_threshold=CROSS_REBGS_THRESHOLD, start_with_scythe=False),
-                        Raider(pid=random.randint(0,2000), name='Chin', hp=121, armour='inq', specwep='maul', claws=True, ring='lightbearer', boost='scb', energy=100, thrall=True, thrallTier=2, delay=0, vengeAmount=2),
-                        Raider(pid=random.randint(0,2000), name='Telegrab', hp=121, armour='torva', specwep='bgs', claws=False, ring='ultor', boost='scb', energy=100, thrall=False, delay=1, vengeAmount=1, re_bgs_threshold=TELEGRAB_REBGS_THRESHOLD, start_with_scythe=False),
-                        Raider(pid=random.randint(0,2000), name='Prep', hp=121, armour='torva', specwep='maul', claws=True, ring='lightbearer', boost='scb', energy=100, thrall=True, thrallTier=2, delay=0, vengeAmount=2),
-                        Raider(pid=random.randint(0,2000), name='Enchangla', hp=121, armour='torva', specwep='maul', claws=True, ring='ultor', boost='scb', energy=100, thrall=False, delay=0, vengeAmount=1)]
+                return [Raider(pid=random.randint(0,2000), name='Cross', hp=121, armour='torva', specwep='bgs', claws=True, amulet='rancour', ring='bellator', boost='scb', energy=100, thrall=False, delay=1, vengeAmount=1, re_bgs_threshold=CROSS_REBGS_THRESHOLD, start_with_scythe=False),
+                        Raider(pid=random.randint(0,2000), name='Chin', hp=121, armour='inq', specwep='maul', claws=True, amulet='rancour', ring='lightbearer', boost='scb', energy=100, thrall=True, thrallTier=2, delay=0, vengeAmount=2),
+                        Raider(pid=random.randint(0,2000), name='Telegrab', hp=121, armour='torva', specwep='bgs', claws=False, amulet='rancour', ring='bellator', boost='scb', energy=100, thrall=False, delay=1, vengeAmount=1, re_bgs_threshold=TELEGRAB_REBGS_THRESHOLD, start_with_scythe=False),
+                        Raider(pid=random.randint(0,2000), name='Prep', hp=121, armour='torva', specwep='maul', claws=True, amulet='rancour', ring='lightbearer', boost='scb', energy=100, thrall=True, thrallTier=2, delay=0, vengeAmount=2),
+                        Raider(pid=random.randint(0,2000), name='Enchangla', hp=121, armour='torva', specwep='maul', claws=True, amulet='rancour', ring='bellator', boost='scb', energy=100, thrall=False, delay=0, vengeAmount=1)]
             # Improper setups
             case 7:
                 return [Raider(pid=random.randint(0,2000), name='Cross', hp=121, armour='torva', specwep='bgs', claws=False, ring='ultor', boost='scb', energy=100, thrall=True, delay=1),
@@ -584,7 +679,7 @@ def round_to_cycle(ticks, overkill):
 # Outputs the simulation results in a graph.
 def construct_graph(x, results, leave_rate, run_rate):
     # Note under the title
-    note = "No claws on tg"
+    note = "rancour, bellator"
     step = 2.4
     results = np.array(results)
     print(results.mean())
@@ -601,8 +696,10 @@ def construct_graph(x, results, leave_rate, run_rate):
     plt.text(0.80, 0.84, "Mean: " + str(round(results.mean(), 2)), transform=fig.transFigure)
     plt.text(0.80, 0.81, "Mode: " + str(stats.mode(results).mode[0]), transform=fig.transFigure)
     plt.text(0.15, 0.84, f"Raids left: {leave_rate}%", transform=fig.transFigure, fontsize="x-large", color="red")
-    plt.text(0.15, 0.81, f"Defence leave threshold: {DEF_LEAVE_THRESHOLD}", transform=fig.transFigure, fontsize="large")
-    plt.text(0.15, 0.78, f"Runable: {run_rate}% (<={RUNABLE_TIME}s)", transform=fig.transFigure, fontsize="large")
+    plt.text(0.15, 0.81, f"Runable: {run_rate}% (<={RUNABLE_TIME}s)", transform=fig.transFigure, fontsize="large")
+    plt.text(0.15, 0.78, f"Defence leave threshold: {DEF_LEAVE_THRESHOLD}", transform=fig.transFigure)
+    plt.text(0.15, 0.76, f"Cross re-bgs: {CROSS_REBGS_THRESHOLD}", transform=fig.transFigure)
+    plt.text(0.15, 0.74, f"TG re-bgs: {TELEGRAB_REBGS_THRESHOLD}", transform=fig.transFigure)
     plt.show()
 
 # Main function to start the simulator.
@@ -639,4 +736,4 @@ def main(x):
 
 
 if __name__ == '__main__':
-    main(100000)  # Number of times to run the simulator
+    main(1000000)  # Number of times to run the simulator
